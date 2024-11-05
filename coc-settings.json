@@ -1,0 +1,9 @@
+{
+  "languageserver": {
+    "clangd": {
+      "command": "clangd",
+      "filetypes": ["c", "cpp", "objc", "objcpp"],
+      "rootPatterns": ["compile_commands.json", "compile_flags.txt", ".git/"]
+    }
+  }
+}
