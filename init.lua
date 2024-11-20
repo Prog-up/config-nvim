@@ -18,15 +18,22 @@ vim.opt.rtp:prepend(lazypath)
 -- Make sure to setup `mapleader` and `maplocalleader` before
 -- loading lazy.nvim so that mappings are correct.
 -- This is also a good place to setup other settings (vim.opt)
-vim.g.mapleader = " "
-vim.g.maplocalleader = "\\"
+-- vim.g.mapleader = " "
+-- vim.g.maplocalleader = "\\"
 
 require("config") -- Import config settings
 require("keymaps") -- Import keymaps settings
 
 -- Setup lazy.nvim
-require("lazy").setup("plugins")
-
+require("lazy").setup("plugins", {
+  checker = {
+    enabled = true,
+    notify = false,
+  },
+  change_detection = {
+    notify = false,
+  },
+})
 -- Autocommand to run clang-format on save
 vim.api.nvim_create_autocmd("BufWritePre", {
   pattern = { "*.c", "*.cpp", "*.h", "*.hpp" },  -- Specify your file extensions
