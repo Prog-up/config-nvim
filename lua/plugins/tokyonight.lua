@@ -20,7 +20,7 @@ return {
         --   sidebars = "transparent",
         --   floats = "transparent",
         -- },  
-        on_colors = function(colors)
+        -- on_colors = function(colors)
           colors.bg = bg
           colors.bg_dark = bg_dark
           colors.bg_float = bg_dark
