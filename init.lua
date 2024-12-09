@@ -37,10 +37,3 @@ require("lazy").setup({
 		notify = false,
 	},
 })
--- Autocommand to run clang-format on save
--- vim.api.nvim_create_autocmd("BufWritePre", {
--- 	pattern = { "*.c", "*.cpp", "*.h", "*.hpp" }, -- Specify your file extensions
--- 	callback = function()
--- 		vim.cmd([[silent! %!clang-format]])
--- 	end,
--- })
