@@ -1,0 +1,19 @@
+return {
+	-- OneDark Theme Plugin
+	{
+		"navarasu/onedark.nvim",
+		priority = 1000, -- Ensure the theme loads before other plugins
+		config = function()
+			require("onedark").setup({
+				-- You can customize the theme here
+				style = "darker", -- Options: 'dark', 'darker', 'cool', 'deep', 'warm', 'warmer'
+				transparent = true, -- Enable/disable transparent background
+				diagnostics = {
+					darker = true, -- Darker background for diagnostic highlights
+					undercurl = true, -- Use undercurl instead of underline for diagnostics
+				},
+			})
+			require("onedark").load() -- Apply the theme
+		end,
+	},
+}
