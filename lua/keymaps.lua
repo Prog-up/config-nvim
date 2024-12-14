@@ -32,9 +32,9 @@ keymap.set("n", "<leader>tp", "<cmd>tabp<CR>", { desc = "Go to previous tab" }) 
 keymap.set("n", "<leader>tf", "<cmd>tabnew %<CR>", { desc = "Open current buffer in new tab" }) --  move current buffer to new tab
 
 -- disable arrow keys
-vim.keymap.set("", "<up>", "<nop>")
-vim.keymap.set("", "<down>", "<nop>")
-vim.keymap.set("", "<left>", "<nop>")
-vim.keymap.set("", "<right>", "<nop>")
-vim.keymap.set("", "<pageup>", "<nop>")
-vim.keymap.set("", "<pagedown>", "<nop>")
+vim.keymap.set({ "n", "v" }, "<up>", "<nop>")
+vim.keymap.set({ "n", "v" }, "<down>", "<nop>")
+vim.keymap.set({ "n", "v" }, "<left>", "<nop>")
+vim.keymap.set({ "n", "v" }, "<right>", "<nop>")
+vim.keymap.set({ "n", "v", "i" }, "<pageup>", "<nop>")
+vim.keymap.set({ "n", "v", "i" }, "<pagedown>", "<nop>")
