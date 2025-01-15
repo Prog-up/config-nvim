@@ -8,6 +8,7 @@ return {
 			formatters_by_ft = {
 				c = { "clang-format" },
 				java = { "google-java-format" },
+				sh = { "shfmt" },
 			},
 			-- Format on save configuration
 			format_on_save = {
