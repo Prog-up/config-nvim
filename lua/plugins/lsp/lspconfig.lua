@@ -6,9 +6,13 @@ return {
 		{ "antosha417/nvim-lsp-file-operations", config = true },
 		{ "folke/neodev.nvim", opts = {} },
 	},
-	config = function()
+    config = function()
+        -- Java setup
+        require('java').setup()
+
 		-- import lspconfig plugin
 		local lspconfig = require("lspconfig")
+        lspconfig.jdtls.setup({})
 
 		-- import mason_lspconfig plugin
 		local mason_lspconfig = require("mason-lspconfig")
