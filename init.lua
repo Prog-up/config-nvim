@@ -21,6 +21,9 @@ vim.opt.rtp:prepend(lazypath)
 -- vim.g.mapleader = " "
 -- vim.g.maplocalleader = "\\"
 
+-- True color settings
+vim.o.termguicolors = true
+
 require("config") -- Import config settings
 require("keymaps") -- Import keymaps settings
 
