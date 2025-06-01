@@ -8,24 +8,21 @@ return {
     },
     config = function()
       -- vim.o.background = "light" -- or 'light' as needed
-      --
-      local c = require("vscode.colors").get_colors()
+      -- local c = require("vscode.colors").get_colors()
       require("vscode").setup({
         transparent = true,
         italic_comments = true,
         underline_links = true,
         disable_nvimtree_bg = true,
-        -- color_overrides = {
-        --   vscLineNumber = "#FFFFFF",
-        -- },
-        -- group_overrides = {
-        --   Cursor = {
-        --     fg = c.vscDarkBlue,
-        --     bg = c.vscLightGreen,
-        --     bold = true,
-        --   },
-        -- },
       })
+      -- FIXME: b.bg is None so the sepatators are white
+      -- require("lualine").setup({
+      --   -- local lualine_colors = require("vscode.colors")
+      --   -- lualine_colors
+      --   options = {
+      --     theme = "vscode",
+      --   },
+      -- })
 
       vim.cmd.colorscheme("vscode")
     end,
