@@ -4,48 +4,8 @@ return {
   "nvim-lualine/lualine.nvim",
   opts = function()
     local icons = LazyVim.config.icons
-
-    -- Create custom transparent vscode theme
-    -- local vscode_theme = require("vscode")
-    -- vscode_theme.setup({ transparent = true })
-    -- vim.cmd.colorscheme("vscode")
-    -- local vscode_colors = require("vscode.colors").get_colors()
-    -- local custom_vscode = {
-    --   normal = {
-    --     a = { fg = vscode_colors.vscFront, bg = vscode_colors.vscBlue },
-    --     b = { fg = vscode_colors.vscFront, bg = vscode_colors.vscGray },
-    --     c = { fg = vscode_colors.vscFront, bg = "NONE" },
-    --   },
-    --   insert = {
-    --     a = { fg = vscode_colors.vscBack, bg = vscode_colors.vscBlue },
-    --     b = { fg = vscode_colors.vscFront, bg = vscode_colors.vscGray },
-    --     c = { fg = vscode_colors.vscFront, bg = "NONE" },
-    --   },
-    --   visual = {
-    --     a = { fg = vscode_colors.vscBack, bg = vscode_colors.vscPink },
-    --     b = { fg = vscode_colors.vscFront, bg = vscode_colors.vscGray },
-    --     c = { fg = vscode_colors.vscFront, bg = "NONE" },
-    --   },
-    --   replace = {
-    --     a = { fg = vscode_colors.vscBack, bg = vscode_colors.vscRed },
-    --     b = { fg = vscode_colors.vscFront, bg = vscode_colors.vscGray },
-    --     c = { fg = vscode_colors.vscFront, bg = "NONE" },
-    --   },
-    --   command = {
-    --     a = { fg = vscode_colors.vscBack, bg = vscode_colors.vscYellow },
-    --     b = { fg = vscode_colors.vscFront, bg = vscode_colors.vscGray },
-    --     c = { fg = vscode_colors.vscFront, bg = "NONE" },
-    --   },
-    --   inactive = {
-    --     a = { fg = vscode_colors.vscGray, bg = vscode_colors.vscBlue },
-    --     b = { fg = vscode_colors.vscGray, bg = vscode_colors.vscGray },
-    --     c = { fg = vscode_colors.vscGray, bg = "NONE" },
-    --   },
-    -- }
     local opts = {
       options = {
-        -- FIXME: c.bg isn't transparent but grey
-        -- theme = custom_vscode,
         component_separators = "",
         section_separators = { left = "", right = "" },
         globalstatus = vim.o.laststatus == 3,
