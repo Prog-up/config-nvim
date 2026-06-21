@@ -117,34 +117,83 @@ end
 vim.keymap.set('n', '<C-e>', toggle_sidebar, { silent = true, desc = 'Toggle Left Sidebar Explorer' })
 
 --------------------------------------------------------------------------------
--- 4. Buffer & Tab Navigation
+-- 4. Buffer / Tab Navigation (Ctrl-h and Ctrl-l)
 --------------------------------------------------------------------------------
--- Switch between buffers (standard "tabs" for editing files)
--- Using a smart helper that filters out Netrw directory listings and special buffers
-local function navigate_buffers(direction)
+-- Helper to list valid file buffers (excluding netrw and special panels)
+local function get_valid_buffers()
   local bufs = vim.fn.getbufinfo({ buflisted = 1 })
-  if #bufs == 0 then
-    return
-  end
-
-  -- Filter buffers to only include actual files
-  local valid_bufs = {}
+  local valid = {}
   for _, buf in ipairs(bufs) do
     local bufnr = buf.bufnr
     local ft = vim.bo[bufnr].filetype
     local bt = vim.bo[bufnr].buftype
     if ft ~= 'netrw' and bt == '' then
-      table.insert(valid_bufs, bufnr)
+      table.insert(valid, bufnr)
+    end
+  end
+  return valid
+end
+
+-- Helper to switch focus to the sidebar window
+local function go_to_sidebar()
+  local netrw_win = nil
+  for _, win in ipairs(vim.api.nvim_list_wins()) do
+    local buf = vim.api.nvim_win_get_buf(win)
+    if vim.bo[buf].filetype == 'netrw' then
+      netrw_win = win
+      break
     end
   end
 
-  if #valid_bufs <= 1 then
+  if netrw_win then
+    vim.api.nvim_set_current_win(netrw_win)
+  else
+    -- If sidebar is closed, open and focus it
+    vim.cmd('Lexplore')
+  end
+end
+
+-- Helper to switch focus to the editor window
+local function go_to_editor(buffer_to_focus)
+  local editor_win = nil
+  for _, win in ipairs(vim.api.nvim_list_wins()) do
+    local buf = vim.api.nvim_win_get_buf(win)
+    if vim.bo[buf].filetype ~= 'netrw' then
+      editor_win = win
+      break
+    end
+  end
+
+  if editor_win then
+    vim.api.nvim_set_current_win(editor_win)
+    if buffer_to_focus then
+      vim.api.nvim_set_current_buf(buffer_to_focus)
+    end
+  end
+end
+
+-- Handle Ctrl-h: move left to previous tab, or jump to sidebar if on the first tab
+local function handle_ctrl_h()
+  if vim.bo.filetype == 'netrw' then
+    return -- Do nothing if we are already in the sidebar
+  end
+
+  local valid_bufs = get_valid_buffers()
+  if #valid_bufs == 0 then
+    go_to_sidebar()
     return
   end
 
   local cur_buf = vim.api.nvim_get_current_buf()
-  local target_idx = nil
 
+  -- If we are in the first tab, pressing Ctrl-h moves focus to the sidebar
+  if cur_buf == valid_bufs[1] then
+    go_to_sidebar()
+    return
+  end
+
+  -- Otherwise, navigate to the previous buffer in the list
+  local target_idx = nil
   for i, bufnr in ipairs(valid_bufs) do
     if bufnr == cur_buf then
       target_idx = i
@@ -152,44 +201,138 @@ local function navigate_buffers(direction)
     end
   end
 
-  if not target_idx then
-    -- If current buffer is not a valid file (e.g. Netrw), jump to first valid one
+  if target_idx then
+    local prev_idx = target_idx - 1
+    if prev_idx < 1 then
+      prev_idx = #valid_bufs
+    end
+    vim.api.nvim_set_current_buf(valid_bufs[prev_idx])
+  else
     vim.api.nvim_set_current_buf(valid_bufs[1])
+  end
+end
+
+-- Handle Ctrl-l: move right to next tab, or jump to the first tab if in the sidebar
+local function handle_ctrl_l()
+  if vim.bo.filetype == 'netrw' then
+    local valid_bufs = get_valid_buffers()
+    if #valid_bufs > 0 then
+      go_to_editor(valid_bufs[1])
+    else
+      go_to_editor()
+    end
     return
   end
 
-  local next_idx = target_idx + direction
-  if next_idx > #valid_bufs then
-    next_idx = 1
-  elseif next_idx < 1 then
-    next_idx = #valid_bufs
+  local valid_bufs = get_valid_buffers()
+  if #valid_bufs <= 1 then
+    return
   end
 
-  vim.api.nvim_set_current_buf(valid_bufs[next_idx])
-end
-
-local function prev_buffer()
-  if vim.bo.filetype == 'netrw' then
-    return -- Do nothing if focus is on the sidebar
+  local cur_buf = vim.api.nvim_get_current_buf()
+  local target_idx = nil
+  for i, bufnr in ipairs(valid_bufs) do
+    if bufnr == cur_buf then
+      target_idx = i
+      break
+    end
   end
-  navigate_buffers(-1)
-end
 
-local function next_buffer()
-  if vim.bo.filetype == 'netrw' then
-    return -- Do nothing if focus is on the sidebar
+  if target_idx then
+    local next_idx = target_idx + 1
+    if next_idx > #valid_bufs then
+      next_idx = 1
+    end
+    vim.api.nvim_set_current_buf(valid_bufs[next_idx])
+  else
+    vim.api.nvim_set_current_buf(valid_bufs[1])
   end
-  navigate_buffers(1)
 end
 
--- Map Ctrl+j and Ctrl+k to move through buffers
-vim.keymap.set('n', '<C-j>', prev_buffer, { silent = true, desc = 'Previous buffer' })
-vim.keymap.set('n', '<C-k>', next_buffer, { silent = true, desc = 'Next buffer' })
+-- Map Ctrl-h and Ctrl-l
+vim.keymap.set('n', '<C-h>', handle_ctrl_h, { silent = true, desc = 'Previous buffer or go to sidebar' })
+vim.keymap.set('n', '<C-l>', handle_ctrl_l, { silent = true, desc = 'Next buffer or go to first tab' })
 
 --------------------------------------------------------------------------------
--- 5. Custom Statusline (Dynamic & Colored)
+-- 5. Tabline (Displaying all open tabs/buffers at the top)
 --------------------------------------------------------------------------------
--- Clean, beautiful statusline highlighting modes and file information without plugins
+opt.showtabline = 2 -- Always show the tabline at the top
+
+-- Custom tabline rendering function in pure Lua (zero dependencies)
+function _G.custom_tabline()
+  local bufs = vim.fn.getbufinfo({ buflisted = 1 })
+  local valid_bufs = {}
+  for _, buf in ipairs(bufs) do
+    local bufnr = buf.bufnr
+    local ft = vim.bo[bufnr].filetype
+    local bt = vim.bo[bufnr].buftype
+    if ft ~= 'netrw' and bt == '' then
+      table.insert(valid_bufs, buf)
+    end
+  end
+
+  local s = ''
+  local cur_buf = vim.api.nvim_get_current_buf()
+
+  for i, buf in ipairs(valid_bufs) do
+    local bufnr = buf.bufnr
+    local name = vim.fn.bufname(bufnr)
+    if name == '' then
+      name = '[No Name]'
+    else
+      name = vim.fn.fnamemodify(name, ':t') -- extract filename only
+    end
+
+    if buf.changed == 1 then
+      name = name .. ' ●'
+    end
+
+    -- Format active vs inactive tabs using built-in TabLine colors
+    if bufnr == cur_buf then
+      s = s .. '%#TabLineSel# ' .. i .. ':' .. name .. ' '
+    else
+      s = s .. '%#TabLine# ' .. i .. ':' .. name .. ' '
+    end
+  end
+
+  s = s .. '%#TabLineFill#%='
+  return s
+end
+
+opt.tabline = '%!v:lua.custom_tabline()'
+
+--------------------------------------------------------------------------------
+-- 6. Custom Bubble Statusline (Matches lazyvim branch design but 100% native)
+--------------------------------------------------------------------------------
+-- Setup highlight colors matching VS Code colors with rounded cap support
+vim.cmd([[
+  highlight StatusLineCustom ctermbg=8 ctermfg=7 guibg=#2d2d2d guifg=#d4d4d4
+  
+  " Mode status styling (Normal: Green-blue)
+  highlight StatusNormalText guibg=#4ec9b0 guifg=#1e1e1e gui=bold
+  highlight StatusNormalCap guifg=#4ec9b0 guibg=#2d2d2d
+  
+  " Mode status styling (Insert: Light blue)
+  highlight StatusInsertText guibg=#569cd6 guifg=#1e1e1e gui=bold
+  highlight StatusInsertCap guifg=#569cd6 guibg=#2d2d2d
+  
+  " Mode status styling (Visual: Magenta)
+  highlight StatusVisualText guibg=#c586c0 guifg=#1e1e1e gui=bold
+  highlight StatusVisualCap guifg=#c586c0 guibg=#2d2d2d
+  
+  " Mode status styling (Replace: Red)
+  highlight StatusReplaceText guibg=#d16969 guifg=#1e1e1e gui=bold
+  highlight StatusReplaceCap guifg=#d16969 guibg=#2d2d2d
+  
+  " Mode status styling (Command: Yellow)
+  highlight StatusCmdText guibg=#dcdcaa guifg=#1e1e1e gui=bold
+  highlight StatusCmdCap guifg=#dcdcaa guibg=#2d2d2d
+  
+  " Content/File details status styling (Darker Gray)
+  highlight StatusFileText guibg=#3c3c3c guifg=#d4d4d4
+  highlight StatusFileCap guifg=#3c3c3c guibg=#2d2d2d
+]])
+
 local modes = {
   ['n']      = 'NORMAL',
   ['no']     = 'N-PENDING',
@@ -212,42 +355,49 @@ local modes = {
   ['t']      = 'TERMINAL',
 }
 
--- Set statusline highlight colors matching the 'vscode' colorscheme
-vim.cmd([[
-  highlight StatusNormal ctermbg=2 ctermfg=0 guibg=#4ec9b0 guifg=#1e1e1e gui=bold
-  highlight StatusInsert ctermbg=4 ctermfg=0 guibg=#569cd6 guifg=#1e1e1e gui=bold
-  highlight StatusVisual ctermbg=5 ctermfg=0 guibg=#c586c0 guifg=#1e1e1e gui=bold
-  highlight StatusReplace ctermbg=1 ctermfg=0 guibg=#d16969 guifg=#1e1e1e gui=bold
-  highlight StatusCmd ctermbg=3 ctermfg=0 guibg=#dcdcaa guifg=#1e1e1e gui=bold
-  highlight StatusLineCustom ctermbg=8 ctermfg=7 guibg=#2d2d2d guifg=#d4d4d4
-]])
-
+-- Render bottom statusline using rounded capsule bubbles ( and )
 function _G.custom_statusline()
   local mode = vim.api.nvim_get_mode().mode
-  local hl = '%#StatusNormal#'
+  local mode_prefix = 'Normal'
   if mode == 'i' then
-    hl = '%#StatusInsert#'
+    mode_prefix = 'Insert'
   elseif mode == 'v' or mode == 'V' or mode == '\22' then
-    hl = '%#StatusVisual#'
+    mode_prefix = 'Visual'
   elseif mode == 'R' then
-    hl = '%#StatusReplace#'
+    mode_prefix = 'Replace'
   elseif mode == 'c' then
-    hl = '%#StatusCmd#'
+    mode_prefix = 'Cmd'
   end
 
   local mode_str = modes[mode] or mode
-  -- Formatted statusline: [MODE] | filename modified === filetype | line:col | percentage
+
+  -- Render bubbles
+  local mode_bubble = string.format(
+    '%%#Status%sCap#%%#Status%sText#%s%%#Status%sCap#',
+    mode_prefix, mode_prefix, mode_str, mode_prefix
+  )
+
+  local file_bubble = '%#StatusFileCap#%#StatusFileText#%f %m%#StatusFileCap#'
+  local filetype_bubble = '%#StatusFileCap#%#StatusFileText#%Y%#StatusFileCap#'
+
+  local pos_bubble = string.format(
+    '%%#Status%sCap#%%#Status%sText#%%l:%%c %%p%%%%%%#Status%sCap#',
+    mode_prefix, mode_prefix, mode_prefix
+  )
+
   return string.format(
-    '%s %s %%#StatusLineCustom# | %%f %%m %%= %%y | %%l:%%c | %%p%% ',
-    hl,
-    mode_str
+    ' %%#StatusLineCustom# %s  %s %%= %s  %s ',
+    mode_bubble,
+    file_bubble,
+    filetype_bubble,
+    pos_bubble
   )
 end
 
 opt.statusline = '%!v:lua.custom_statusline()'
 
 --------------------------------------------------------------------------------
--- 6. Filetype-Specific Settings & Autocommands
+-- 7. Filetype-Specific Settings & Autocommands
 --------------------------------------------------------------------------------
 -- Enable filetype detection, filetype plugins, and indentation rules (built-in)
 vim.cmd("filetype plugin indent on")

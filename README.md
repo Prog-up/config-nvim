@@ -10,13 +10,14 @@ Developed following **YAGNI (You Aren't Gonna Need It)** principles for speed an
    - Built using Neovim's native file explorer **Netrw**.
    - Toggle the sidebar anytime using `<Ctrl-e>`.
    - Complete support for file creation, deletion, renaming, and directory creation directly in the sidebar.
-2. **Buffer & Tab Navigation**:
-   - Navigate through active open buffers (files) using `<Ctrl-j>` (previous) and `<Ctrl-k>` (next).
-   - Sidebar-aware navigation logic: switching buffers won't corrupt or hijack the sidebar explorer layout.
-3. **Elegant Built-in Statusline**:
-   - Custom dynamic statusline showing the current mode (Normal, Insert, Visual, Replace, Command) with adaptive background coloring.
-   - Standard path, file modifications, filetype, cursor line:col, and percentage displays.
-4. **Filetype-Specific Configuration**:
+2. **Tab & Buffer Navigation (`<Ctrl-h>` & `<Ctrl-l>`)**:
+   - Cycle through open file tabs using `<Ctrl-h>` (previous tab) and `<Ctrl-l>` (next tab).
+   - Smart sidebar transitions: pressing `<Ctrl-h>` while on the first tab moves focus directly into the sidebar. Pressing `<Ctrl-l>` while inside the sidebar jumps directly to the first tab on the right.
+3. **Top Tabline**:
+   - Displays all open files/buffers at the top of the screen natively, highlighting the active tab and indicating unsaved changes with `●`.
+4. **Dynamic Bubble Statusline**:
+   - Colored capsule bubbles theme mimicking `lualine.nvim`'s bubbles layout natively (Normal = green-blue, Insert = light blue, Visual = pink, Command = yellow). Shows current mode, filepath, modified state, filetype, line:col, and percentage.
+5. **Filetype-Specific Configuration**:
    - Optimized indentation and settings for **Markdown**, **LaTeX**, **Python**, **Rust**, and **Ansible**.
    - Auto-detects Ansible playbooks and tasks files automatically using Neovim's native API.
 
