@@ -399,56 +399,71 @@ end
 opt.tabline = '%!v:lua.custom_tabline()'
 
 --------------------------------------------------------------------------------
--- 7. Custom Bubble Statusline (100% native blue theme)
+-- 7. Lualine Bubbles Statusline (Using nvim-lualine/lualine.nvim)
 --------------------------------------------------------------------------------
-local modes = {
-  ['n']      = 'NORMAL',
-  ['no']     = 'N-PENDING',
-  ['v']      = 'VISUAL',
-  ['V']      = 'V-LINE',
-  ['\22']    = 'V-BLOCK',
-  ['s']      = 'SELECT',
-  ['S']      = 'S-LINE',
-  ['\19']     = 'S-BLOCK',
-  ['i']      = 'INSERT',
-  ['R']      = 'REPLACE',
-  ['Rv']     = 'V-REPLACE',
-  ['c']      = 'COMMAND',
-  ['cv']     = 'VIM EX',
-  ['ce']     = 'EX',
-  ['r']      = 'PROMPT',
-  ['rm']     = 'MORE',
-  ['r?']     = 'CONFIRM',
-  ['!']      = 'SHELL',
-  ['t']      = 'TERMINAL',
+-- Load dependencies and lualine from pack
+vim.cmd("packadd! nvim-web-devicons")
+vim.cmd("packadd! lualine.nvim")
+
+-- Bubbles config for lualine configured in blue theme
+local colors = {
+  blue   = '#569cd6',   -- VS Code blue
+  cyan   = '#4ec9b0',   -- VS Code teal/cyan
+  black  = '#1e1e1e',   -- VS Code dark background
+  white  = '#d4d4d4',   -- VS Code default foreground
+  red    = '#d16969',   -- VS Code red
+  violet = '#c586c0',   -- VS Code purple/violet
+  grey   = '#2d2d2d',   -- VS Code panel background
+  darkblue = '#007acc', -- VS Code status bar blue
 }
 
--- Render bottom statusline using rounded capsule bubbles ( and ) in blue theme
-function _G.custom_statusline()
-  local mode = vim.api.nvim_get_mode().mode
-  local mode_str = modes[mode] or mode
+local bubbles_theme = {
+  normal = {
+    a = { fg = colors.white, bg = colors.darkblue, gui = 'bold' },
+    b = { fg = colors.white, bg = colors.grey },
+    c = { fg = colors.white },
+  },
 
-  -- Render status bubbles uniformly in blue colors
-  local mode_bubble = string.format(
-    '%%#StatusActiveCap#%%#StatusActiveText#%s%%#StatusActiveCap#',
-    mode_str
-  )
+  insert = { a = { fg = colors.white, bg = colors.blue, gui = 'bold' } },
+  visual = { a = { fg = colors.white, bg = colors.violet, gui = 'bold' } },
+  replace = { a = { fg = colors.white, bg = colors.red, gui = 'bold' } },
 
-  local file_bubble = '%#StatusSecondaryCap#%#StatusSecondaryText#%f %m%#StatusSecondaryCap#'
-  local filetype_bubble = '%#StatusSecondaryCap#%#StatusSecondaryText#%Y%#StatusSecondaryCap#'
+  inactive = {
+    a = { fg = colors.white, bg = colors.black },
+    b = { fg = colors.white, bg = colors.black },
+    c = { fg = colors.white },
+  },
+}
 
-  local pos_bubble = '%#StatusActiveCap#%#StatusActiveText#%l:%c %p%%%#StatusActiveCap#'
-
-  return string.format(
-    ' %%#StatusLineCustom# %s  %s %%= %s  %s ',
-    mode_bubble,
-    file_bubble,
-    filetype_bubble,
-    pos_bubble
-  )
-end
-
-opt.statusline = '%!v:lua.custom_statusline()'
+require('lualine').setup {
+  options = {
+    theme = bubbles_theme,
+    component_separators = '',
+    section_separators = { left = '', right = '' },
+  },
+  sections = {
+    lualine_a = { { 'mode', separator = { left = '' }, right_padding = 2 } },
+    lualine_b = { 'filename', 'branch' },
+    lualine_c = {
+      '%=',
+    },
+    lualine_x = {},
+    lualine_y = { 'filetype', 'progress' },
+    lualine_z = {
+      { 'location', separator = { right = '' }, left_padding = 2 },
+    },
+  },
+  inactive_sections = {
+    lualine_a = { 'filename' },
+    lualine_b = {},
+    lualine_c = {},
+    lualine_x = {},
+    lualine_y = {},
+    lualine_z = { 'location' },
+  },
+  tabline = {},
+  extensions = {},
+}
 
 --------------------------------------------------------------------------------
 -- 8. Filetype-Specific Settings & Autocommands
