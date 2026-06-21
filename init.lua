@@ -5,6 +5,7 @@
 -- fast, lightweight, and free of unnecessary dependencies.
 --
 -- File types supported out-of-the-box: Markdown, LaTeX, Python, Rust, Ansible/YAML.
+-- Theme: VS Code (loaded via vim.pack to match the lazyvim branch layout)
 -- =============================================================================
 
 --------------------------------------------------------------------------------
@@ -48,10 +49,21 @@ opt.backup = false            -- Disable backups
 opt.writebackup = false       -- Disable write backups
 
 --------------------------------------------------------------------------------
--- 2. Theme & Colors
+-- 2. Theme & Colors (VS Code)
 --------------------------------------------------------------------------------
--- Set the built-in 'retrobox' colorscheme (a clean Gruvbox style added in Neovim 0.9)
-vim.cmd("colorscheme retrobox")
+-- Load the vscode.nvim theme plugin from vim.pack
+vim.cmd("packadd! vscode.nvim")
+
+-- Configure the vscode theme
+require("vscode").setup({
+  transparent = true,
+  italic_comments = true,
+  underline_links = true,
+  disable_nvimtree_bg = true,
+})
+
+-- Load the colorscheme
+vim.cmd("colorscheme vscode")
 
 --------------------------------------------------------------------------------
 -- 3. File Explorer (Netrw) - Left Sidebar Panel
@@ -63,6 +75,15 @@ vim.g.netrw_winsize = 20       -- Sidebar width (20% of the screen)
 vim.g.netrw_browse_split = 4   -- Open selected files in the previous/last window
 vim.g.netrw_altv = 1           -- Open split windows to the right
 vim.g.netrw_keepdir = 0        -- Keep current working directory synced
+vim.g.netrw_fastbrowse = 2     -- Keep directory listings up-to-date and clean
+
+-- Clean up Netrw buffers when closed to prevent polluting the buffer list
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = "netrw",
+  callback = function()
+    vim.opt_local.bufhidden = "wipe" -- Wipe buffer when it becomes hidden
+  end
+})
 
 -- How to use Netrw (Cheat Sheet):
 --   - <CR> : Open file or toggle/expand folder
@@ -99,28 +120,71 @@ vim.keymap.set('n', '<C-e>', toggle_sidebar, { silent = true, desc = 'Toggle Lef
 -- 4. Buffer & Tab Navigation
 --------------------------------------------------------------------------------
 -- Switch between buffers (standard "tabs" for editing files)
--- Using a smart helper to prevent Netrw sidebar window from being replaced
+-- Using a smart helper that filters out Netrw directory listings and special buffers
+local function navigate_buffers(direction)
+  local bufs = vim.fn.getbufinfo({ buflisted = 1 })
+  if #bufs == 0 then
+    return
+  end
+
+  -- Filter buffers to only include actual files
+  local valid_bufs = {}
+  for _, buf in ipairs(bufs) do
+    local bufnr = buf.bufnr
+    local ft = vim.bo[bufnr].filetype
+    local bt = vim.bo[bufnr].buftype
+    if ft ~= 'netrw' and bt == '' then
+      table.insert(valid_bufs, bufnr)
+    end
+  end
+
+  if #valid_bufs <= 1 then
+    return
+  end
+
+  local cur_buf = vim.api.nvim_get_current_buf()
+  local target_idx = nil
+
+  for i, bufnr in ipairs(valid_bufs) do
+    if bufnr == cur_buf then
+      target_idx = i
+      break
+    end
+  end
+
+  if not target_idx then
+    -- If current buffer is not a valid file (e.g. Netrw), jump to first valid one
+    vim.api.nvim_set_current_buf(valid_bufs[1])
+    return
+  end
+
+  local next_idx = target_idx + direction
+  if next_idx > #valid_bufs then
+    next_idx = 1
+  elseif next_idx < 1 then
+    next_idx = #valid_bufs
+  end
+
+  vim.api.nvim_set_current_buf(valid_bufs[next_idx])
+end
+
 local function prev_buffer()
   if vim.bo.filetype == 'netrw' then
     return -- Do nothing if focus is on the sidebar
   end
-  vim.cmd('bprevious')
+  navigate_buffers(-1)
 end
 
 local function next_buffer()
   if vim.bo.filetype == 'netrw' then
     return -- Do nothing if focus is on the sidebar
   end
-  vim.cmd('bnext')
+  navigate_buffers(1)
 end
 
 -- Map Ctrl+j and Ctrl+k to move through buffers
 vim.keymap.set('n', '<C-j>', prev_buffer, { silent = true, desc = 'Previous buffer' })
 vim.keymap.set('n', '<C-k>', next_buffer, { silent = true, desc = 'Next buffer' })
-
--- Alternative: Navigate actual Vim Tabs (Uncomment these and comment out the buffer ones if preferred)
--- vim.keymap.set('n', '<C-j>', ':tabprevious<CR>', { silent = true, desc = 'Previous tab' })
--- vim.keymap.set('n', '<C-k>', ':tabnext<CR>', { silent = true, desc = 'Next tab' })
 
 --------------------------------------------------------------------------------
 -- 5. Custom Statusline (Dynamic & Colored)
@@ -148,14 +212,14 @@ local modes = {
   ['t']      = 'TERMINAL',
 }
 
--- Set statusline highlight colors matching the 'retrobox' colorscheme
+-- Set statusline highlight colors matching the 'vscode' colorscheme
 vim.cmd([[
-  highlight StatusNormal ctermbg=2 ctermfg=0 guibg=#b8bb26 guifg=#282828 gui=bold
-  highlight StatusInsert ctermbg=4 ctermfg=0 guibg=#83a598 guifg=#282828 gui=bold
-  highlight StatusVisual ctermbg=5 ctermfg=0 guibg=#d3869b guifg=#282828 gui=bold
-  highlight StatusReplace ctermbg=1 ctermfg=0 guibg=#fb4934 guifg=#282828 gui=bold
-  highlight StatusCmd ctermbg=3 ctermfg=0 guibg=#fabd2f guifg=#282828 gui=bold
-  highlight StatusLineCustom ctermbg=8 ctermfg=7 guibg=#3c3836 guifg=#ebdbb2
+  highlight StatusNormal ctermbg=2 ctermfg=0 guibg=#4ec9b0 guifg=#1e1e1e gui=bold
+  highlight StatusInsert ctermbg=4 ctermfg=0 guibg=#569cd6 guifg=#1e1e1e gui=bold
+  highlight StatusVisual ctermbg=5 ctermfg=0 guibg=#c586c0 guifg=#1e1e1e gui=bold
+  highlight StatusReplace ctermbg=1 ctermfg=0 guibg=#d16969 guifg=#1e1e1e gui=bold
+  highlight StatusCmd ctermbg=3 ctermfg=0 guibg=#dcdcaa guifg=#1e1e1e gui=bold
+  highlight StatusLineCustom ctermbg=8 ctermfg=7 guibg=#2d2d2d guifg=#d4d4d4
 ]])
 
 function _G.custom_statusline()

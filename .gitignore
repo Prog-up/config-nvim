@@ -1,0 +1,12 @@
+# Ignore plugin clones under vim.pack (keep directory structure)
+pack/*/start/*
+pack/*/opt/*
+!pack/*/start/.keep
+!pack/*/opt/.keep
+!pack/plugins/start/
+!pack/plugins/opt/
+
+# Neovim cache/temporary files
+*.swp
+*.swo
+.netrwhist
