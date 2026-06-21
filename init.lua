@@ -77,20 +77,66 @@ vim.g.netrw_altv = 1           -- Open split windows to the right
 vim.g.netrw_keepdir = 0        -- Keep current working directory synced
 vim.g.netrw_fastbrowse = 2     -- Keep directory listings up-to-date and clean
 
--- Clean up Netrw buffers when closed to prevent polluting the buffer list
+-- Custom navigation functions for Netrw (h/l open/close folders)
+local function netrw_l()
+  -- Simulate Enter (opens file or expands/collapses directory)
+  vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<CR>', true, true, true), 'm', true)
+end
+
+local function netrw_h()
+  local line = vim.api.nvim_get_current_line()
+  local row = vim.api.nvim_win_get_cursor(0)[1]
+
+  -- If we are at the very top, run the fallback (go up a directory)
+  if row <= 1 then
+    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('-', true, true, true), 'm', true)
+    return
+  end
+
+  -- In netrw tree view, directories end with '/'
+  local is_dir = line:match('/$')
+
+  if is_dir then
+    -- Check if it's expanded by inspecting the next line's indentation.
+    local next_line = vim.fn.getline(row + 1)
+    local cur_indent = line:match('^[|%s]*') or ''
+    local next_indent = next_line:match('^[|%s]*') or ''
+
+    if #next_indent > #cur_indent then
+      -- It is expanded! Press <CR> to collapse it.
+      vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<CR>', true, true, true), 'm', true)
+      return
+    end
+  end
+
+  -- If it's a file or a collapsed directory, try to jump to the parent directory line.
+  local cur_indent = line:match('^[|%s]*') or ''
+  if #cur_indent > 0 then
+    for r = row - 1, 1, -1 do
+      local p_line = vim.fn.getline(r)
+      local p_indent = p_line:match('^[|%s]*') or ''
+      if #p_indent < #cur_indent and p_line:match('/$') then
+        vim.api.nvim_win_set_cursor(0, { r, 0 })
+        return
+      end
+    end
+  end
+
+  -- Fallback: Go up one directory level (simulates '-' in netrw)
+  vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('-', true, true, true), 'm', true)
+end
+
+-- Clean up Netrw buffers when closed and bind custom keymaps local to the buffer
 vim.api.nvim_create_autocmd("FileType", {
   pattern = "netrw",
   callback = function()
     vim.opt_local.bufhidden = "wipe" -- Wipe buffer when it becomes hidden
+    
+    -- Map h/l locally in netrw buffer for folder open/close navigation
+    vim.keymap.set('n', 'l', netrw_l, { silent = true, buffer = true, desc = 'Open folder/file' })
+    vim.keymap.set('n', 'h', netrw_h, { silent = true, buffer = true, desc = 'Collapse folder or jump to parent' })
   end
 })
-
--- How to use Netrw (Cheat Sheet):
---   - <CR> : Open file or toggle/expand folder
---   - %    : Create a new file (prompts for name)
---   - d    : Create a new directory (prompts for name)
---   - R    : Rename file or directory under the cursor
---   - D    : Delete file or directory (prompts for confirmation)
 
 -- Robust toggle function for the sidebar
 local function toggle_sidebar()
@@ -254,12 +300,46 @@ vim.keymap.set('n', '<C-h>', handle_ctrl_h, { silent = true, desc = 'Previous bu
 vim.keymap.set('n', '<C-l>', handle_ctrl_l, { silent = true, desc = 'Next buffer or go to first tab' })
 
 --------------------------------------------------------------------------------
--- 5. Tabline (Displaying all open tabs/buffers at the top)
+-- 5. Highlight Colors (Blue Bubble Theme for Statusline and Tabline)
+--------------------------------------------------------------------------------
+vim.cmd([[
+  highlight StatusLineCustom ctermbg=8 ctermfg=7 guibg=#1e1e1e guifg=#808080
+  
+  " Active Blue Bubble Highlights (VS Code Blue)
+  highlight StatusActiveText guibg=#007acc guifg=#ffffff gui=bold
+  highlight StatusActiveCap guifg=#007acc guibg=#1e1e1e
+  
+  " Secondary Dark Blue Bubble Highlights (Muted Blue-Gray)
+  highlight StatusSecondaryText guibg=#2d3d5a guifg=#d4d4d4
+  highlight StatusSecondaryCap guifg=#2d3d5a guibg=#1e1e1e
+  
+  " Tabline layout colors
+  highlight TabLineFill guibg=#1e1e1e guifg=#808080
+]])
+
+--------------------------------------------------------------------------------
+-- 6. Tabline (Displaying all open tabs/buffers at the top of the editor)
 --------------------------------------------------------------------------------
 opt.showtabline = 2 -- Always show the tabline at the top
 
 -- Custom tabline rendering function in pure Lua (zero dependencies)
 function _G.custom_tabline()
+  -- Calculate sidebar width dynamically to align tabs with the text editor only
+  local sidebar_width = 0
+  for _, win in ipairs(vim.api.nvim_list_wins()) do
+    local buf = vim.api.nvim_win_get_buf(win)
+    if vim.bo[buf].filetype == 'netrw' then
+      sidebar_width = vim.api.nvim_win_get_width(win) + 1 -- plus vertical separator
+      break
+    end
+  end
+
+  local s = ''
+  -- Pad the left side matching the sidebar width
+  if sidebar_width > 0 then
+    s = s .. '%#TabLineFill#' .. string.rep(' ', sidebar_width)
+  end
+
   local bufs = vim.fn.getbufinfo({ buflisted = 1 })
   local valid_bufs = {}
   for _, buf in ipairs(bufs) do
@@ -271,9 +351,9 @@ function _G.custom_tabline()
     end
   end
 
-  local s = ''
   local cur_buf = vim.api.nvim_get_current_buf()
 
+  -- Render tabs as bubbles
   for i, buf in ipairs(valid_bufs) do
     local bufnr = buf.bufnr
     local name = vim.fn.bufname(bufnr)
@@ -287,11 +367,11 @@ function _G.custom_tabline()
       name = name .. ' ●'
     end
 
-    -- Format active vs inactive tabs using built-in TabLine colors
+    -- Format active vs inactive tabs using blue bubble highlights
     if bufnr == cur_buf then
-      s = s .. '%#TabLineSel# ' .. i .. ':' .. name .. ' '
+      s = s .. '%#StatusActiveCap#%#StatusActiveText#' .. i .. ':' .. name .. '%#StatusActiveCap# '
     else
-      s = s .. '%#TabLine# ' .. i .. ':' .. name .. ' '
+      s = s .. '%#StatusSecondaryCap#%#StatusSecondaryText#' .. i .. ':' .. name .. '%#StatusSecondaryCap# '
     end
   end
 
@@ -302,37 +382,8 @@ end
 opt.tabline = '%!v:lua.custom_tabline()'
 
 --------------------------------------------------------------------------------
--- 6. Custom Bubble Statusline (Matches lazyvim branch design but 100% native)
+-- 7. Custom Bubble Statusline (100% native blue theme)
 --------------------------------------------------------------------------------
--- Setup highlight colors matching VS Code colors with rounded cap support
-vim.cmd([[
-  highlight StatusLineCustom ctermbg=8 ctermfg=7 guibg=#2d2d2d guifg=#d4d4d4
-  
-  " Mode status styling (Normal: Green-blue)
-  highlight StatusNormalText guibg=#4ec9b0 guifg=#1e1e1e gui=bold
-  highlight StatusNormalCap guifg=#4ec9b0 guibg=#2d2d2d
-  
-  " Mode status styling (Insert: Light blue)
-  highlight StatusInsertText guibg=#569cd6 guifg=#1e1e1e gui=bold
-  highlight StatusInsertCap guifg=#569cd6 guibg=#2d2d2d
-  
-  " Mode status styling (Visual: Magenta)
-  highlight StatusVisualText guibg=#c586c0 guifg=#1e1e1e gui=bold
-  highlight StatusVisualCap guifg=#c586c0 guibg=#2d2d2d
-  
-  " Mode status styling (Replace: Red)
-  highlight StatusReplaceText guibg=#d16969 guifg=#1e1e1e gui=bold
-  highlight StatusReplaceCap guifg=#d16969 guibg=#2d2d2d
-  
-  " Mode status styling (Command: Yellow)
-  highlight StatusCmdText guibg=#dcdcaa guifg=#1e1e1e gui=bold
-  highlight StatusCmdCap guifg=#dcdcaa guibg=#2d2d2d
-  
-  " Content/File details status styling (Darker Gray)
-  highlight StatusFileText guibg=#3c3c3c guifg=#d4d4d4
-  highlight StatusFileCap guifg=#3c3c3c guibg=#2d2d2d
-]])
-
 local modes = {
   ['n']      = 'NORMAL',
   ['no']     = 'N-PENDING',
@@ -355,35 +406,21 @@ local modes = {
   ['t']      = 'TERMINAL',
 }
 
--- Render bottom statusline using rounded capsule bubbles ( and )
+-- Render bottom statusline using rounded capsule bubbles ( and ) in blue theme
 function _G.custom_statusline()
   local mode = vim.api.nvim_get_mode().mode
-  local mode_prefix = 'Normal'
-  if mode == 'i' then
-    mode_prefix = 'Insert'
-  elseif mode == 'v' or mode == 'V' or mode == '\22' then
-    mode_prefix = 'Visual'
-  elseif mode == 'R' then
-    mode_prefix = 'Replace'
-  elseif mode == 'c' then
-    mode_prefix = 'Cmd'
-  end
-
   local mode_str = modes[mode] or mode
 
-  -- Render bubbles
+  -- Render status bubbles uniformly in blue colors
   local mode_bubble = string.format(
-    '%%#Status%sCap#%%#Status%sText#%s%%#Status%sCap#',
-    mode_prefix, mode_prefix, mode_str, mode_prefix
+    '%%#StatusActiveCap#%%#StatusActiveText#%s%%#StatusActiveCap#',
+    mode_str
   )
 
-  local file_bubble = '%#StatusFileCap#%#StatusFileText#%f %m%#StatusFileCap#'
-  local filetype_bubble = '%#StatusFileCap#%#StatusFileText#%Y%#StatusFileCap#'
+  local file_bubble = '%#StatusSecondaryCap#%#StatusSecondaryText#%f %m%#StatusSecondaryCap#'
+  local filetype_bubble = '%#StatusSecondaryCap#%#StatusSecondaryText#%Y%#StatusSecondaryCap#'
 
-  local pos_bubble = string.format(
-    '%%#Status%sCap#%%#Status%sText#%%l:%%c %%p%%%%%%#Status%sCap#',
-    mode_prefix, mode_prefix, mode_prefix
-  )
+  local pos_bubble = '%#StatusActiveCap#%#StatusActiveText#%l:%c %p%%%#StatusActiveCap#'
 
   return string.format(
     ' %%#StatusLineCustom# %s  %s %%= %s  %s ',
@@ -397,7 +434,7 @@ end
 opt.statusline = '%!v:lua.custom_statusline()'
 
 --------------------------------------------------------------------------------
--- 7. Filetype-Specific Settings & Autocommands
+-- 8. Filetype-Specific Settings & Autocommands
 --------------------------------------------------------------------------------
 -- Enable filetype detection, filetype plugins, and indentation rules (built-in)
 vim.cmd("filetype plugin indent on")

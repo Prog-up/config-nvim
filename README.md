@@ -13,10 +13,11 @@ Developed following **YAGNI (You Aren't Gonna Need It)** principles for speed an
 2. **Tab & Buffer Navigation (`<Ctrl-h>` & `<Ctrl-l>`)**:
    - Cycle through open file tabs using `<Ctrl-h>` (previous tab) and `<Ctrl-l>` (next tab).
    - Smart sidebar transitions: pressing `<Ctrl-h>` while on the first tab moves focus directly into the sidebar. Pressing `<Ctrl-l>` while inside the sidebar jumps directly to the first tab on the right.
-3. **Top Tabline**:
-   - Displays all open files/buffers at the top of the screen natively, highlighting the active tab and indicating unsaved changes with `●`.
-4. **Dynamic Bubble Statusline**:
-   - Colored capsule bubbles theme mimicking `lualine.nvim`'s bubbles layout natively (Normal = green-blue, Insert = light blue, Visual = pink, Command = yellow). Shows current mode, filepath, modified state, filetype, line:col, and percentage.
+3. **Top Tabline with Dynamic Alignment**:
+   - Displays all open files/buffers at the top of the text editor window only, leaving the top of the sidebar blank.
+   - Designed using capsule bubbles in the VS Code blue theme (active: bright blue, inactive: dark blue-gray). Indicates unsaved changes with `●`.
+4. **Bottom Bubble Statusline**:
+   - Programmed with a unified blue capsule bubble theme (active: bright blue, inactive: dark blue-gray) displaying current mode, filepath, modified state, filetype, line:col, and percentage.
 5. **Filetype-Specific Configuration**:
    - Optimized indentation and settings for **Markdown**, **LaTeX**, **Python**, **Rust**, and **Ansible**.
    - Auto-detects Ansible playbooks and tasks files automatically using Neovim's native API.
@@ -25,11 +26,12 @@ Developed following **YAGNI (You Aren't Gonna Need It)** principles for speed an
 
 ## Netrw Cheat Sheet (Left Sidebar Explorer)
 
-Toggle the sidebar with **`<Ctrl-e>`**. While inside the sidebar, use the following built-in Netrw keybindings:
+Toggle the sidebar with **`<Ctrl-e>`**. While inside the sidebar, use the following keybindings:
 
 | Key | Action |
 | --- | --- |
-| `<CR>` | Open file (opens in the main editor window) / Expand or Collapse directory |
+| `l` / `<CR>` | Open file (in the editor window) / Expand folder / Toggle directory |
+| `h` | Collapse folder (if expanded) / Jump to parent folder (if collapsed/file) / Go up a directory level |
 | `%` | Create a new file (prompts for filename at the bottom command bar) |
 | `d` | Create a new directory (prompts for folder name) |
 | `R` | Rename the file/folder under the cursor |
