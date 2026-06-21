@@ -36,6 +36,7 @@ opt.incsearch = true          -- Show search matches as you type
 opt.tabstop = 4               -- Number of spaces a tab counts for
 opt.shiftwidth = 4            -- Number of spaces for auto-indent
 opt.expandtab = true          -- Convert tabs to spaces
+opt.autoindent = true         -- Copy indent from current line when starting a new line
 opt.smartindent = true        -- Smart auto-indenting for programming languages
 
 -- Window Splitting Layouts
@@ -287,6 +288,9 @@ vim.api.nvim_create_autocmd("FileType", {
     -- Overwrite Netrw's built-in Ctrl-l mapping (which defaults to refreshing directory)
     vim.keymap.set('n', '<C-l>', handle_ctrl_l, { silent = true, buffer = true, desc = 'Go to first tab' })
     vim.keymap.set('n', '<C-h>', handle_ctrl_h, { silent = true, buffer = true, desc = 'Go to sidebar' })
+
+    -- Map 'a' to '%' locally to allow creating files inside Netrw
+    vim.keymap.set('n', 'a', '%', { remap = true, buffer = true, desc = 'Create new file' })
   end
 })
 

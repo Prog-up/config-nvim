@@ -32,7 +32,7 @@ Toggle the sidebar with **`<Ctrl-e>`**. While inside the sidebar, use the follow
 | --- | --- |
 | `l` / `<CR>` | Open file (in the editor window) / Expand folder / Toggle directory |
 | `h` | Collapse folder (if expanded) / Jump to parent folder (if collapsed/file) / Go up a directory level |
-| `%` | Create a new file (prompts for filename at the bottom command bar) |
+| `a` / `%` | Create a new file (prompts for filename at the bottom command bar) |
 | `d` | Create a new directory (prompts for folder name) |
 | `R` | Rename the file/folder under the cursor |
 | `D` | Delete the file/folder under the cursor (asks for confirmation) |
