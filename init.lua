@@ -165,15 +165,22 @@ vim.keymap.set('n', '<C-e>', toggle_sidebar, { silent = true, desc = 'Toggle Lef
 --------------------------------------------------------------------------------
 -- 4. Buffer / Tab Navigation (Ctrl-h and Ctrl-l)
 --------------------------------------------------------------------------------
--- Helper to list valid file buffers (excluding netrw and special panels)
+-- Helper to list valid file buffers (excluding netrw, directories, and special panels)
 local function get_valid_buffers()
   local bufs = vim.fn.getbufinfo({ buflisted = 1 })
   local valid = {}
   for _, buf in ipairs(bufs) do
     local bufnr = buf.bufnr
+    local name = vim.api.nvim_buf_get_name(bufnr)
     local ft = vim.bo[bufnr].filetype
     local bt = vim.bo[bufnr].buftype
-    if ft ~= 'netrw' and bt == '' then
+
+    -- Exclude netrw, special buffers, directories, and netrw URLs
+    local is_netrw = ft == 'netrw' or name:match('^netrw://')
+    local is_dir = vim.fn.isdirectory(name) == 1
+    local is_special = bt ~= ''
+
+    if not is_netrw and not is_dir and not is_special then
       table.insert(valid, bufnr)
     end
   end
@@ -212,6 +219,12 @@ local function go_to_editor(buffer_to_focus)
 
   if editor_win then
     vim.api.nvim_set_current_win(editor_win)
+    if buffer_to_focus then
+      vim.api.nvim_set_current_buf(buffer_to_focus)
+    end
+  else
+    -- If there is no editor window, split vertically and open the buffer
+    vim.cmd('vsplit')
     if buffer_to_focus then
       vim.api.nvim_set_current_buf(buffer_to_focus)
     end
