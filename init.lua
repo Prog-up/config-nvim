@@ -135,6 +135,10 @@ vim.api.nvim_create_autocmd("FileType", {
     -- Map h/l locally in netrw buffer for folder open/close navigation
     vim.keymap.set('n', 'l', netrw_l, { silent = true, buffer = true, desc = 'Open folder/file' })
     vim.keymap.set('n', 'h', netrw_h, { silent = true, buffer = true, desc = 'Collapse folder or jump to parent' })
+
+    -- Overwrite Netrw's built-in Ctrl-l mapping (which defaults to refreshing directory)
+    vim.keymap.set('n', '<C-l>', function() handle_ctrl_l() end, { silent = true, buffer = true, desc = 'Go to first tab' })
+    vim.keymap.set('n', '<C-h>', function() handle_ctrl_h() end, { silent = true, buffer = true, desc = 'Go to sidebar' })
   end
 })
 
