@@ -126,48 +126,8 @@ local function netrw_h()
   vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('-', true, true, true), 'm', true)
 end
 
--- Clean up Netrw buffers when closed and bind custom keymaps local to the buffer
-vim.api.nvim_create_autocmd("FileType", {
-  pattern = "netrw",
-  callback = function()
-    vim.opt_local.bufhidden = "wipe" -- Wipe buffer when it becomes hidden
-    
-    -- Map h/l locally in netrw buffer for folder open/close navigation
-    vim.keymap.set('n', 'l', netrw_l, { silent = true, buffer = true, desc = 'Open folder/file' })
-    vim.keymap.set('n', 'h', netrw_h, { silent = true, buffer = true, desc = 'Collapse folder or jump to parent' })
-
-    -- Overwrite Netrw's built-in Ctrl-l mapping (which defaults to refreshing directory)
-    vim.keymap.set('n', '<C-l>', function() handle_ctrl_l() end, { silent = true, buffer = true, desc = 'Go to first tab' })
-    vim.keymap.set('n', '<C-h>', function() handle_ctrl_h() end, { silent = true, buffer = true, desc = 'Go to sidebar' })
-  end
-})
-
--- Robust toggle function for the sidebar
-local function toggle_sidebar()
-  -- Look for an open Netrw window
-  local netrw_win = nil
-  for _, win in ipairs(vim.api.nvim_list_wins()) do
-    local buf = vim.api.nvim_win_get_buf(win)
-    if vim.bo[buf].filetype == 'netrw' then
-      netrw_win = win
-      break
-    end
-  end
-
-  if netrw_win then
-    -- Close Netrw if it is already open
-    vim.api.nvim_win_close(netrw_win, true)
-  else
-    -- Open Netrw using built-in Lexplore
-    vim.cmd('Lexplore')
-  end
-end
-
--- Keymap to toggle sidebar (Ctrl + e)
-vim.keymap.set('n', '<C-e>', toggle_sidebar, { silent = true, desc = 'Toggle Left Sidebar Explorer' })
-
 --------------------------------------------------------------------------------
--- 4. Buffer / Tab Navigation (Ctrl-h and Ctrl-l)
+-- 4. Buffer / Tab Navigation Helpers (Ctrl-h and Ctrl-l)
 --------------------------------------------------------------------------------
 -- Helper to list valid file buffers (excluding netrw, directories, and special panels)
 local function get_valid_buffers()
@@ -311,6 +271,46 @@ local function handle_ctrl_l()
     vim.api.nvim_set_current_buf(valid_bufs[1])
   end
 end
+
+-- Clean up Netrw buffers when closed and bind custom keymaps local to the buffer
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = "netrw",
+  callback = function()
+    vim.opt_local.bufhidden = "wipe" -- Wipe buffer when it becomes hidden
+    
+    -- Map h/l locally in netrw buffer for folder open/close navigation
+    vim.keymap.set('n', 'l', netrw_l, { silent = true, buffer = true, desc = 'Open folder/file' })
+    vim.keymap.set('n', 'h', netrw_h, { silent = true, buffer = true, desc = 'Collapse folder or jump to parent' })
+
+    -- Overwrite Netrw's built-in Ctrl-l mapping (which defaults to refreshing directory)
+    vim.keymap.set('n', '<C-l>', handle_ctrl_l, { silent = true, buffer = true, desc = 'Go to first tab' })
+    vim.keymap.set('n', '<C-h>', handle_ctrl_h, { silent = true, buffer = true, desc = 'Go to sidebar' })
+  end
+})
+
+-- Robust toggle function for the sidebar
+local function toggle_sidebar()
+  -- Look for an open Netrw window
+  local netrw_win = nil
+  for _, win in ipairs(vim.api.nvim_list_wins()) do
+    local buf = vim.api.nvim_win_get_buf(win)
+    if vim.bo[buf].filetype == 'netrw' then
+      netrw_win = win
+      break
+    end
+  end
+
+  if netrw_win then
+    -- Close Netrw if it is already open
+    vim.api.nvim_win_close(netrw_win, true)
+  else
+    -- Open Netrw using built-in Lexplore
+    vim.cmd('Lexplore')
+  end
+end
+
+-- Keymap to toggle sidebar (Ctrl + e)
+vim.keymap.set('n', '<C-e>', toggle_sidebar, { silent = true, desc = 'Toggle Left Sidebar Explorer' })
 
 -- Map Ctrl-h and Ctrl-l
 vim.keymap.set('n', '<C-h>', handle_ctrl_h, { silent = true, desc = 'Previous buffer or go to sidebar' })
