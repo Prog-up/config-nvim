@@ -280,8 +280,6 @@ end
 vim.api.nvim_create_autocmd("FileType", {
   pattern = "netrw",
   callback = function()
-    vim.opt_local.bufhidden = "wipe" -- Wipe buffer when it becomes hidden
-    
     -- Map h/l locally in netrw buffer for folder open/close navigation
     vim.keymap.set('n', 'l', netrw_l, { silent = true, buffer = true, desc = 'Open folder/file' })
     vim.keymap.set('n', 'h', netrw_h, { silent = true, buffer = true, desc = 'Collapse folder or jump to parent' })
