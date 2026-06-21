@@ -1,0 +1,68 @@
+# Lite Neovim Configuration (Built-in & YAGNI)
+
+A lightweight, high-performance, and plug-free Neovim configuration structured around Neovim's built-in capabilities and the standard package system (`vim.pack`).
+
+Developed following **YAGNI (You Aren't Gonna Need It)** principles for speed and minimal overhead.
+
+## Key Features
+
+1. **Integrated Left Sidebar Panel**:
+   - Built using Neovim's native file explorer **Netrw**.
+   - Toggle the sidebar anytime using `<Ctrl-e>`.
+   - Complete support for file creation, deletion, renaming, and directory creation directly in the sidebar.
+2. **Buffer & Tab Navigation**:
+   - Navigate through active open buffers (files) using `<Ctrl-j>` (previous) and `<Ctrl-k>` (next).
+   - Sidebar-aware navigation logic: switching buffers won't corrupt or hijack the sidebar explorer layout.
+3. **Elegant Built-in Statusline**:
+   - Custom dynamic statusline showing the current mode (Normal, Insert, Visual, Replace, Command) with adaptive background coloring.
+   - Standard path, file modifications, filetype, cursor line:col, and percentage displays.
+4. **Filetype-Specific Configuration**:
+   - Optimized indentation and settings for **Markdown**, **LaTeX**, **Python**, **Rust**, and **Ansible**.
+   - Auto-detects Ansible playbooks and tasks files automatically using Neovim's native API.
+
+---
+
+## Netrw Cheat Sheet (Left Sidebar Explorer)
+
+Toggle the sidebar with **`<Ctrl-e>`**. While inside the sidebar, use the following built-in Netrw keybindings:
+
+| Key | Action |
+| --- | --- |
+| `<CR>` | Open file (opens in the main editor window) / Expand or Collapse directory |
+| `%` | Create a new file (prompts for filename at the bottom command bar) |
+| `d` | Create a new directory (prompts for folder name) |
+| `R` | Rename the file/folder under the cursor |
+| `D` | Delete the file/folder under the cursor (asks for confirmation) |
+
+---
+
+## Package Management via `vim.pack`
+
+This configuration uses Neovim's built-in package manager (`vim.pack`). You don't need any complex plugin managers like Lazy.nvim or packer.nvim. 
+
+### Structure
+Packages are placed under standard directories:
+- `~/.config/nvim/pack/plugins/start/` (Loaded automatically on startup)
+- `~/.config/nvim/pack/plugins/opt/` (Loaded on-demand via `:packadd <plugin>`)
+
+### How to Install a Plugin
+To install any plugin, simply clone it into the `start` directory. For example, to install a colorscheme or syntax plugin:
+
+```bash
+git clone --depth 1 https://github.com/morhetz/gruvbox.git ~/.config/nvim/pack/plugins/start/gruvbox
+```
+
+To remove a plugin, delete its directory:
+```bash
+rm -rf ~/.config/nvim/pack/plugins/start/gruvbox
+```
+
+---
+
+## Filetype Autocommand Rules
+
+- **Markdown**: Enables word wrapping, spelling checks, 2-space tabs.
+- **LaTeX**: Enables word wrapping, spelling checks, 2-space tabs.
+- **Python**: Standard PEP8 4-space indentation.
+- **Rust**: Standard 4-space indentation.
+- **Ansible/YAML**: Standard 2-space indentation. Recognizes ansible files in tasks/playbooks directories and formats them accordingly.
