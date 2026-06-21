@@ -65,6 +65,10 @@ require("vscode").setup({
 -- Load the colorscheme
 vim.cmd("colorscheme vscode")
 
+-- Make Neovim's statusline background transparent so there is no solid line between bubbles
+vim.cmd("highlight StatusLine guibg=NONE ctermbg=NONE")
+vim.cmd("highlight StatusLineNC guibg=NONE ctermbg=NONE")
+
 --------------------------------------------------------------------------------
 -- 3. File Explorer (Netrw) - Left Sidebar Panel
 --------------------------------------------------------------------------------
@@ -421,17 +425,29 @@ local bubbles_theme = {
   normal = {
     a = { fg = colors.white, bg = colors.darkblue, gui = 'bold' },
     b = { fg = colors.white, bg = colors.grey },
-    c = { fg = colors.white },
+    c = { fg = colors.white, bg = 'NONE' },
   },
 
-  insert = { a = { fg = colors.white, bg = colors.blue, gui = 'bold' } },
-  visual = { a = { fg = colors.white, bg = colors.violet, gui = 'bold' } },
-  replace = { a = { fg = colors.white, bg = colors.red, gui = 'bold' } },
+  insert = {
+    a = { fg = colors.white, bg = colors.blue, gui = 'bold' },
+    b = { fg = colors.white, bg = colors.grey },
+    c = { fg = colors.white, bg = 'NONE' },
+  },
+  visual = {
+    a = { fg = colors.white, bg = colors.violet, gui = 'bold' },
+    b = { fg = colors.white, bg = colors.grey },
+    c = { fg = colors.white, bg = 'NONE' },
+  },
+  replace = {
+    a = { fg = colors.white, bg = colors.red, gui = 'bold' },
+    b = { fg = colors.white, bg = colors.grey },
+    c = { fg = colors.white, bg = 'NONE' },
+  },
 
   inactive = {
     a = { fg = colors.white, bg = colors.black },
     b = { fg = colors.white, bg = colors.black },
-    c = { fg = colors.white },
+    c = { fg = colors.white, bg = 'NONE' },
   },
 }
 
